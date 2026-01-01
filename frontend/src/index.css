@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* Keep your custom math.inc styles below */
+body {
+  margin: 0;
+  background-color: #000000;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
