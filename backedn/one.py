@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel , EmailStr  , Field
+from typing_extensions import Annotated
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import uuid
 import datetime
+import random
 
 app = FastAPI()
 
@@ -22,34 +24,43 @@ def get_db_connection():
     return psycopg2.connect(
         dbname="finance",
         user="postgres",
-        password="Aiml@1234",
+        password="Nsa2s1b77!",
         host="127.0.0.1",
         port="5432"
     )
 
 # --- Data Models ---
+
+Username = Annotated[str, Field(min_length=3, max_length=20)]
+Name = Annotated[str, Field(min_length=2)]
+Password = Annotated[str, Field(min_length=8)]
+Note = Annotated[str, Field(max_length=255)]
+Month = Annotated[str , Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$",description="Month in YYYY-MM format")]
+
 class UserSignup(BaseModel):
-    username: str
-    name: str
-    email: str
-    password: str
+    username: Username
+    name: Name
+    email: EmailStr
+    password: Password
 
 class BudgetSetup(BaseModel):
     userid: str
-    category_name: str
-    limit_amount: int
-    month: str
+    category_name: Name
+    limit_amount: int = Field(gt=0)
+    month: Month
+
 
 
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class ExpenseAdd(BaseModel):
     userid: str
     catid: str
-    amount: int
-    note: str
+    amount: int = Field(gt=0, lt=1_000_000)
+    note: Note
+
 
 # --- API Endpoints ---
 
@@ -182,7 +193,7 @@ WHERE b.userid = %s;
     return data
 
 @app.post("/new-budget")
-def new_budget(data: dict):
+def new_budget(data: BudgetSetup):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -299,7 +310,7 @@ def get_prediction(userid: str):
     }
 
 @app.post("/add-expense")
-def add_expense(data: dict):
+def add_expense(data: ExpenseAdd):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
